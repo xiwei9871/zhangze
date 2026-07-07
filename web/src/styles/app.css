@@ -40,3 +40,8 @@ body {
 .chart {
   height: 280px;
 }
+
+.inline-result {
+  margin-left: 12px;
+  color: #4b5563;
+}

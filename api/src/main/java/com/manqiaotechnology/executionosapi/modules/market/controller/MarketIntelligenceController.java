@@ -2,7 +2,6 @@ package com.manqiaotechnology.executionosapi.modules.market.controller;
 
 import com.manqiaotechnology.executionosapi.common.PageResult;
 import com.manqiaotechnology.executionosapi.common.Result;
-import com.manqiaotechnology.executionosapi.modules.market.enums.CrawlStatus;
 import com.manqiaotechnology.executionosapi.modules.market.enums.ImportanceLevel;
 import com.manqiaotechnology.executionosapi.modules.market.enums.IntelligenceStatus;
 import com.manqiaotechnology.executionosapi.modules.market.model.ExternalImportRequest;
@@ -11,8 +10,9 @@ import com.manqiaotechnology.executionosapi.modules.market.model.MarketInfoSourc
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketIntelligence;
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketIntelligenceReport;
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketKeywordTopic;
-import com.manqiaotechnology.executionosapi.modules.market.service.InMemoryMarketStore;
+import com.manqiaotechnology.executionosapi.modules.market.service.MarketCrawlerService;
 import com.manqiaotechnology.executionosapi.modules.market.service.MarketKeywordMatchService;
+import com.manqiaotechnology.executionosapi.modules.market.service.MarketStore;
 import com.manqiaotechnology.executionosapi.modules.market.service.MarketWorkflowService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,22 +28,24 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/market/intelligence")
 public class MarketIntelligenceController {
-    private final InMemoryMarketStore store;
+    private final MarketStore store;
+    private final MarketCrawlerService crawlerService;
     private final MarketWorkflowService workflowService;
     private final MarketKeywordMatchService keywordMatchService;
 
     public MarketIntelligenceController(
-            InMemoryMarketStore store,
+            MarketStore store,
+            MarketCrawlerService crawlerService,
             MarketWorkflowService workflowService,
             MarketKeywordMatchService keywordMatchService
     ) {
         this.store = store;
+        this.crawlerService = crawlerService;
         this.workflowService = workflowService;
         this.keywordMatchService = keywordMatchService;
     }
@@ -93,11 +95,7 @@ public class MarketIntelligenceController {
 
     @PostMapping("/sources/{id}/test-fetch")
     public Result<Map<String, Object>> testFetch(@PathVariable Long id) {
-        MarketInfoSource source = store.findSource(id).orElseThrow();
-        source.setLastFetchTime(OffsetDateTime.now());
-        source.setLastFetchStatus("SUCCESS");
-        store.saveSource(source);
-        return Result.ok(Map.of("sourceId", id, "status", "SUCCESS", "message", "MVP test fetch completed"));
+        return Result.ok(crawlerService.testFetch(id));
     }
 
     @GetMapping("/topics")
@@ -155,12 +153,12 @@ public class MarketIntelligenceController {
 
     @PostMapping("/crawl/run")
     public Result<MarketCrawlLog> runCrawl() {
-        return Result.ok(createCrawlLog(null, CrawlStatus.SUCCESS, "Manual all-source crawl accepted by MVP scheduler"));
+        return Result.ok(crawlerService.runAll());
     }
 
     @PostMapping("/crawl/run/{sourceId}")
     public Result<MarketCrawlLog> runSourceCrawl(@PathVariable Long sourceId) {
-        return Result.ok(createCrawlLog(sourceId, CrawlStatus.SUCCESS, "Manual source crawl accepted by MVP scheduler"));
+        return Result.ok(crawlerService.runSource(sourceId));
     }
 
     @GetMapping("/crawl/logs")
@@ -308,17 +306,6 @@ public class MarketIntelligenceController {
     @GetMapping("/external/import-logs")
     public Result<PageResult<MarketCrawlLog>> externalImportLogs() {
         return Result.ok(PageResult.of(store.listCrawlLogs(), 1, 100));
-    }
-
-    private MarketCrawlLog createCrawlLog(Long sourceId, CrawlStatus status, String message) {
-        MarketCrawlLog log = new MarketCrawlLog();
-        log.setSourceId(sourceId);
-        log.setBatchNo("BATCH-" + UUID.randomUUID());
-        log.setStartTime(OffsetDateTime.now());
-        log.setEndTime(OffsetDateTime.now());
-        log.setStatus(status);
-        log.setErrorMessage(message);
-        return store.saveCrawlLog(log);
     }
 
     private static boolean isToday(OffsetDateTime time) {

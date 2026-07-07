@@ -9,7 +9,8 @@ import type {
   MarketIntelligence,
   MarketKeywordTopic,
   MarketReport,
-  PageResult
+  PageResult,
+  TestFetchResponse
 } from './types'
 
 export const marketApi = {
@@ -17,7 +18,7 @@ export const marketApi = {
   saveSource: (data: MarketInfoSource) => data.id ? request.put(`/sources/${data.id}`, data) : request.post('/sources', data),
   enableSource: (id: number) => request.post(`/sources/${id}/enable`),
   disableSource: (id: number) => request.post(`/sources/${id}/disable`),
-  testFetch: (id: number) => request.post(`/sources/${id}/test-fetch`),
+  testFetch: (id: number) => request.post<unknown, TestFetchResponse>(`/sources/${id}/test-fetch`),
 
   listTopics: () => request.get<unknown, PageResult<MarketKeywordTopic>>('/topics'),
   saveTopic: (data: MarketKeywordTopic) => data.id ? request.put(`/topics/${data.id}`, data) : request.post('/topics', data),
@@ -25,6 +26,7 @@ export const marketApi = {
   disableTopic: (id: number) => request.post(`/topics/${id}/disable`),
 
   runCrawl: () => request.post<unknown, MarketCrawlLog>('/crawl/run'),
+  runSourceCrawl: (id: number) => request.post<unknown, MarketCrawlLog>(`/crawl/run/${id}`),
   listCrawlLogs: () => request.get<unknown, PageResult<MarketCrawlLog>>('/crawl/logs'),
 
   listItems: () => request.get<unknown, PageResult<MarketIntelligence>>('/items'),

@@ -27,6 +27,19 @@ function openOriginal(row: MarketIntelligence) {
   globalThis.open(row.url, '_blank', 'noopener,noreferrer')
 }
 
+function sourceHost(url: string) {
+  try {
+    return new URL(url).host
+  } catch {
+    return url
+  }
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return '-'
+  return value.replace('T', ' ').slice(0, 16)
+}
+
 async function resummarize(row: MarketIntelligence) {
   await marketApi.resummarize(row.id)
   ElMessage.success('已重新摘要')
@@ -68,6 +81,16 @@ onMounted(load)
     <el-table :data="items" border>
       <el-table-column prop="title" label="标题" min-width="220" />
       <el-table-column prop="sourceName" label="来源" width="140" />
+      <el-table-column label="原文链接" min-width="230">
+        <template #default="{ row }">
+          <div class="source-link-cell">
+            <el-link :href="row.url" target="_blank" type="primary" :underline="false">
+              {{ sourceHost(row.url) }}
+            </el-link>
+            <span class="url-text">{{ row.url }}</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="matchedKeywords" label="关键词" width="180">
         <template #default="{ row }">{{ row.matchedKeywords.join('、') }}</template>
       </el-table-column>
@@ -91,9 +114,18 @@ onMounted(load)
 
     <el-drawer v-model="drawerVisible" size="45%" title="情报详情">
       <template v-if="current">
-        <h3>{{ current.title }}</h3>
-        <p>{{ current.contentExcerpt }}</p>
+        <div class="detail-title-row">
+          <h3>{{ current.title }}</h3>
+          <el-button type="primary" @click="openOriginal(current)">打开原文</el-button>
+        </div>
+        <p class="detail-excerpt">{{ current.contentExcerpt }}</p>
         <el-descriptions :column="1" border>
+          <el-descriptions-item label="来源">{{ current.sourceName }}</el-descriptions-item>
+          <el-descriptions-item label="发布时间">{{ formatDateTime(current.publishTime) }}</el-descriptions-item>
+          <el-descriptions-item label="抓取时间">{{ formatDateTime(current.crawlTime) }}</el-descriptions-item>
+          <el-descriptions-item label="原文链接">
+            <el-link :href="current.url" target="_blank" type="primary">{{ current.url }}</el-link>
+          </el-descriptions-item>
           <el-descriptions-item label="AI 摘要">{{ current.aiSummary }}</el-descriptions-item>
           <el-descriptions-item label="机会点">{{ current.aiOpportunity }}</el-descriptions-item>
           <el-descriptions-item label="风险点">{{ current.aiRisk }}</el-descriptions-item>
@@ -123,3 +155,43 @@ onMounted(load)
     </el-dialog>
   </section>
 </template>
+
+<style scoped>
+.source-link-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.url-text {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-title-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detail-title-row h3 {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.detail-excerpt {
+  margin: 0 0 14px;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+:deep(.el-descriptions__content .el-link) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+</style>

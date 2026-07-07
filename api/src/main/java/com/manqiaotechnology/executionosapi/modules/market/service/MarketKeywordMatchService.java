@@ -33,7 +33,7 @@ public class MarketKeywordMatchService {
             }
             List<String> hits = topic.getIncludeKeywords().stream()
                     .filter(keyword -> !normalize(keyword).isBlank())
-                    .filter(keyword -> matchTarget.contains(normalize(keyword)))
+                    .filter(keyword -> matchesKeyword(matchTarget, keyword))
                     .toList();
             if (!hits.isEmpty()) {
                 matchedTopicIds.add(topic.getId());
@@ -60,6 +60,17 @@ public class MarketKeywordMatchService {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private static boolean matchesKeyword(String matchTarget, String keyword) {
+        String normalized = normalize(keyword);
+        if (normalized.contains("+")) {
+            return List.of(normalized.split("\\+")).stream()
+                    .map(String::trim)
+                    .filter(part -> !part.isBlank())
+                    .allMatch(matchTarget::contains);
+        }
+        return matchTarget.contains(normalized);
     }
 
     public record MatchResult(

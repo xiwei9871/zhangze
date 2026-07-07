@@ -7,7 +7,6 @@ import com.manqiaotechnology.executionosapi.modules.market.model.MarketIntellige
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketIntelligenceReport;
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketIntelligenceVerifyLog;
 import com.manqiaotechnology.executionosapi.modules.market.model.MarketKeywordTopic;
-import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -18,8 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Repository
-public class InMemoryMarketStore {
+public class InMemoryMarketStore implements MarketStore {
     private final AtomicLong sourceIds = new AtomicLong(1);
     private final AtomicLong topicIds = new AtomicLong(1);
     private final AtomicLong itemIds = new AtomicLong(1);
@@ -36,6 +34,7 @@ public class InMemoryMarketStore {
     private final Map<Long, MarketIntelligenceReport> reports = new LinkedHashMap<>();
     private final Map<Long, MarketIntelligencePushLog> pushLogs = new LinkedHashMap<>();
 
+    @Override
     public synchronized MarketInfoSource saveSource(MarketInfoSource source) {
         OffsetDateTime now = OffsetDateTime.now();
         if (source.getId() == null) {
@@ -47,6 +46,7 @@ public class InMemoryMarketStore {
         return source;
     }
 
+    @Override
     public synchronized MarketKeywordTopic saveTopic(MarketKeywordTopic topic) {
         OffsetDateTime now = OffsetDateTime.now();
         if (topic.getId() == null) {
@@ -58,6 +58,7 @@ public class InMemoryMarketStore {
         return topic;
     }
 
+    @Override
     public synchronized MarketIntelligence saveItem(MarketIntelligence item) {
         OffsetDateTime now = OffsetDateTime.now();
         if (item.getId() == null) {
@@ -69,6 +70,7 @@ public class InMemoryMarketStore {
         return item;
     }
 
+    @Override
     public synchronized MarketCrawlLog saveCrawlLog(MarketCrawlLog log) {
         if (log.getId() == null) {
             log.setId(logIds.getAndIncrement());
@@ -78,6 +80,7 @@ public class InMemoryMarketStore {
         return log;
     }
 
+    @Override
     public synchronized MarketIntelligenceVerifyLog saveVerifyLog(MarketIntelligenceVerifyLog log) {
         if (log.getId() == null) {
             log.setId(verifyLogIds.getAndIncrement());
@@ -87,6 +90,7 @@ public class InMemoryMarketStore {
         return log;
     }
 
+    @Override
     public synchronized MarketIntelligenceReport saveReport(MarketIntelligenceReport report) {
         if (report.getId() == null) {
             report.setId(reportIds.getAndIncrement());
@@ -96,6 +100,7 @@ public class InMemoryMarketStore {
         return report;
     }
 
+    @Override
     public synchronized MarketIntelligencePushLog savePushLog(MarketIntelligencePushLog log) {
         if (log.getId() == null) {
             log.setId(pushIds.getAndIncrement());
@@ -105,40 +110,49 @@ public class InMemoryMarketStore {
         return log;
     }
 
+    @Override
     public List<MarketInfoSource> listSources() {
         return visible(sources);
     }
 
+    @Override
     public List<MarketKeywordTopic> listTopics() {
         return visible(topics);
     }
 
+    @Override
     public List<MarketIntelligence> listItems() {
         return visible(items).stream()
                 .sorted(Comparator.comparing(MarketIntelligence::getCreateTime, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
     }
 
+    @Override
     public List<MarketCrawlLog> listCrawlLogs() {
         return new ArrayList<>(crawlLogs.values());
     }
 
+    @Override
     public List<MarketIntelligenceVerifyLog> listVerifyLogs() {
         return new ArrayList<>(verifyLogs.values());
     }
 
+    @Override
     public List<MarketIntelligencePushLog> listPushLogs() {
         return new ArrayList<>(pushLogs.values());
     }
 
+    @Override
     public List<MarketIntelligenceReport> listReports() {
         return new ArrayList<>(reports.values());
     }
 
+    @Override
     public Optional<MarketInfoSource> findSource(Long id) {
         return Optional.ofNullable(sources.get(id)).filter(source -> !source.isDeleted());
     }
 
+    @Override
     public Optional<MarketInfoSource> findSourceByCode(String sourceCode) {
         return sources.values().stream()
                 .filter(source -> !source.isDeleted())
@@ -146,32 +160,39 @@ public class InMemoryMarketStore {
                 .findFirst();
     }
 
+    @Override
     public Optional<MarketKeywordTopic> findTopic(Long id) {
         return Optional.ofNullable(topics.get(id)).filter(topic -> !topic.isDeleted());
     }
 
+    @Override
     public Optional<MarketIntelligence> findItem(Long id) {
         return Optional.ofNullable(items.get(id)).filter(item -> !item.isDeleted());
     }
 
+    @Override
     public Optional<MarketIntelligenceReport> findReport(Long id) {
         return Optional.ofNullable(reports.get(id));
     }
 
+    @Override
     public Optional<MarketCrawlLog> findCrawlLog(Long id) {
         return Optional.ofNullable(crawlLogs.get(id));
     }
 
+    @Override
     public boolean hasDuplicate(String urlHash, String contentHash) {
         return items.values().stream()
                 .filter(item -> !item.isDeleted())
                 .anyMatch(item -> safeEquals(item.getUrlHash(), urlHash) || safeEquals(item.getContentHash(), contentHash));
     }
 
+    @Override
     public List<MarketIntelligenceVerifyLog> listVerifyLogs(Long itemId) {
         return verifyLogs.values().stream().filter(log -> itemId.equals(log.getIntelligenceId())).toList();
     }
 
+    @Override
     public List<MarketIntelligencePushLog> listPushLogs(Long itemId) {
         return pushLogs.values().stream().filter(log -> itemId.equals(log.getIntelligenceId())).toList();
     }

@@ -17,14 +17,14 @@ import java.util.List;
 
 @Service
 public class MarketWorkflowService {
-    private final InMemoryMarketStore store;
+    private final MarketStore store;
     private final MarketKeywordMatchService keywordMatchService;
     private final MarketDeduplicateService deduplicateService;
     private final MarketAiSummaryService aiSummaryService;
     private final MarketNotificationService notificationService;
 
     public MarketWorkflowService(
-            InMemoryMarketStore store,
+            MarketStore store,
             MarketKeywordMatchService keywordMatchService,
             MarketDeduplicateService deduplicateService,
             MarketAiSummaryService aiSummaryService,

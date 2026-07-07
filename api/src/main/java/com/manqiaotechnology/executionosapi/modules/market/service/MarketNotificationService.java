@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class MarketNotificationService {
-    private final InMemoryMarketStore store;
+    private final MarketStore store;
 
-    public MarketNotificationService(InMemoryMarketStore store) {
+    public MarketNotificationService(MarketStore store) {
         this.store = store;
     }
 

@@ -25,7 +25,22 @@ export interface MarketInfoSource {
   lastFetchTime?: string
   lastFetchStatus?: string
   lastErrorMessage?: string
+  fetchConfig?: Record<string, unknown>
+  lastCrawlCursor?: string
   remark?: string
+}
+
+export interface TestFetchResponse {
+  sourceId: number
+  status: string
+  fetchedCount: number
+  sampleItems: Array<{
+    title: string
+    url: string
+    publishTime?: string
+    contentExcerpt?: string
+  }>
+  errorMessage?: string
 }
 
 export interface MarketKeywordTopic {
