@@ -1,0 +1,19 @@
+.DS_Store
+
+# Java
+api/target/
+*.class
+
+# Node
+web/node_modules/
+web/dist/
+web/.vite/
+
+# Local env
+.env
+.env.*
+!*.example
+
+# IDE
+.idea/
+.vscode/

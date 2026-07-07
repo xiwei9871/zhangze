@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: market-intelligence-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/market_intelligence
+    username: market
+    password: market
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+market:
+  intelligence:
+    crawler-enabled: true
+    crawler-fixed-delay-ms: 300000
+    ai-summary-enabled: true
+    push-enabled: true
+    max-content-length: 12000
+    request-timeout-seconds: 15
